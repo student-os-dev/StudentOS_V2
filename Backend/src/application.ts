@@ -5,12 +5,15 @@ import type { ModelClient } from './ollama.ts';
 import { createApp } from './app.ts';
 import type { createAdminSecurity } from './admin/security.ts';
 
-// Keep the existing /api/ask application and its middleware unchanged.
-export function createApplication(config: Config, index: KnowledgeIndex, client: ModelClient,
-  admin: ReturnType<typeof createAdminSecurity>) {
+import type { PublishedKnowledge } from './publishing/published-knowledge.ts';
+import type { InferenceGate } from './inference-gate.ts';
+
+// Preserve the ask contract while production uses the published-only knowledge source.
+export function createApplication(config: Config, index: KnowledgeIndex | PublishedKnowledge, client: ModelClient,
+  admin: ReturnType<typeof createAdminSecurity>, gate?: InferenceGate) {
   const app = express();
   app.disable('x-powered-by');
   app.use('/api/admin', admin.router);
-  app.use(createApp(config, index, client));
+  app.use(createApp(config, index, client, gate));
   return app;
 }

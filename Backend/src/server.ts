@@ -1,5 +1,9 @@
+import { RAG_PIPELINE_VERSION } from './rag.ts';
 import { loadConfig } from './config.ts';
-import { loadKnowledge } from './knowledge.ts';
+import { InferenceGate } from './inference-gate.ts';
+import { PublishedKnowledge } from './publishing/published-knowledge.ts';
+import { createPublicationService } from './publishing/service.ts';
+import { ARTIFACT_DIRECTORY } from './publishing/artifacts.ts';
 import { OllamaClient } from './ollama.ts';
 import { createApplication } from './application.ts';
 import { openDatabase } from './database/database.ts';
@@ -15,13 +19,18 @@ try {
   const client = new OllamaClient(config);
   const embeddingModel = await client.installedModel(config.embeddingModel);
   await client.installedModel(config.answerModel);
-  const index = await loadKnowledge(embeddingModel.name, embeddingModel.digest);
   await client.prepareGeneration();
   adminDatabase = openDatabase();
-  const admin = createAdminSecurity(adminDatabase, adminConfig);
-  const server = createApplication(config, index, client, admin).listen(config.port, config.host, () => {
+  const gate = new InferenceGate();
+  const published = new PublishedKnowledge(adminDatabase, ARTIFACT_DIRECTORY, embeddingModel);
+  const publication = createPublicationService(adminDatabase, client, gate, ARTIFACT_DIRECTORY, embeddingModel, () => client.installedModel(config.embeddingModel));
+  const admin = createAdminSecurity(adminDatabase, adminConfig, Date.now, publication);
+  const interrupted = publication.recoverInterrupted();
+  if (interrupted) console.log('Interrupted index jobs marked failed: ' + interrupted);
+  const server = createApplication(config, published, client, admin, gate).listen(config.port, config.host, () => {
     console.log('Student OS V2 Phase 1: http://' + config.host + ':' + config.port);
-    console.log('Loaded ' + index.passages.length + ' fictional Transport passages from the local JSON index.');
+    console.log('RAG pipeline: ' + RAG_PIPELINE_VERSION + '; process ' + process.pid);
+    console.log('Department answers use approved, indexed, explicitly published SQLite knowledge only.');
     console.log('Generation mode: ' + config.generationMode + '; think:false; one active request.');
     if (config.generationMode === 'qwen3-prefill') {
       console.log('Using the approved Qwen3 closed-thinking-prefix workaround; this is not native non-thinking support.');

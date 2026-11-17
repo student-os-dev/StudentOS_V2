@@ -14,7 +14,8 @@ function object(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 export function isSource(value: unknown): value is SourceReference {
-  return object(value) && ['id', 'title', 'passage'].every(key => typeof value[key] === 'string' && String(value[key]).trim());
+  return object(value) && ['id', 'title', 'passage'].every(key => typeof value[key] === 'string' && String(value[key]).trim()) &&
+    ['excerpt', 'documentId', 'versionId'].every(key => value[key] === undefined || typeof value[key] === 'string');
 }
 export function backendFailure(status: number, code: string): AssistantError {
   if (status === 503 && code === 'BUSY') {

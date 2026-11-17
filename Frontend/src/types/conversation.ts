@@ -2,6 +2,9 @@ export interface SourceReference {
   id: string;
   title: string;
   passage: string;
+  excerpt?: string;
+  documentId?: string;
+  versionId?: string;
 }
 export interface Answer {
   available: boolean;

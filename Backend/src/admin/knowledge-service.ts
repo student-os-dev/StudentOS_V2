@@ -49,6 +49,7 @@ export function createKnowledgeService(db: DatabaseSync) {
       createdBy: row.created_by, createdAt: row.created_at, status: String(row.status),
       reviewedBy: row.reviewed_by, reviewedAt: row.reviewed_at, reviewNote: row.note,
       indexingEligible: row.eligible === 1,
+      indexes: db.prepare('SELECT id,status,created_at AS createdAt,completed_at AS completedAt FROM indexing_metadata WHERE version_id=? AND document_id=? AND department_id=? ORDER BY created_at DESC,id LIMIT 10').all(versionId,documentId,DEPARTMENT),
     };
   }
   function describe(id: string, includeText = true) {
@@ -60,6 +61,7 @@ export function createKnowledgeService(db: DatabaseSync) {
       archivedAt: row.archived_at, createdAt: row.created_at, lockVersion: Number(row.lock_version),
       etag: documentTag(id, Number(row.lock_version)),
       latestVersion: version(id, String(current.id), includeText),
+      publication: db.prepare('SELECT version_id AS versionId,index_id AS indexId,published_at AS publishedAt FROM publication_pointers WHERE document_id=? AND department_id=?').get(id,DEPARTMENT) ?? null,
     };
   }
   function writable(id: string, expected: string): Row {

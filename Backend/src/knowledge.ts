@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { DATASET_PATH, INDEX_PATH, DOCUMENT_PREFIX, QUERY_PREFIX, type Config } from './config.ts';
 
-export interface Passage { id: string; departmentId: string; title: string; text: string }
+export interface Passage { id: string; departmentId: string; title: string; text: string; documentId?: string; versionId?: string; indexId?: string; location?: { start: number; end: number } }
 export interface Dataset { fictional: true; description: string; passages: Passage[] }
 export interface IndexedPassage extends Passage { embedding: number[] }
 export interface KnowledgeIndex {

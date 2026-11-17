@@ -9,6 +9,7 @@ import { PERMISSIONS, type Permission } from './provision.ts';
 
 import { MIGRATIONS } from '../database/migrate.ts';
 import { createKnowledgeRouter } from './knowledge-routes.ts';
+import type { PublicationService } from '../publishing/service.ts';
 
 const digest = (value: string) => createHash('sha256').update(value).digest('hex');
 const csrfToken = (token: string) => createHmac('sha256', token).update('student-os-admin-csrf-v1').digest('hex');
@@ -29,7 +30,7 @@ function cookieToken(request: Request, name: string): string | null {
 const object = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-export function createAdminSecurity(db: DatabaseSync, config: AdminConfig, now: () => number = Date.now) {
+export function createAdminSecurity(db: DatabaseSync, config: AdminConfig, now: () => number = Date.now, publication?: PublicationService) {
   // Deliberately no implicit migrations or database repair at server startup.
   if (db.prepare('SELECT max(version) AS version FROM schema_migrations').get()?.version !== MIGRATIONS.length) {
     throw new Error('Administrator schema is not current. Run npm run db:migrate.');
@@ -210,7 +211,7 @@ export function createAdminSecurity(db: DatabaseSync, config: AdminConfig, now: 
   }));
   // All subsequent admin routes require authentication; every mutation also requires CSRF.
   router.use(authenticate, csrf);
-  router.use('/departments/transport', createKnowledgeRouter(db, { requirePermission, currentAdministrator }));
+  router.use('/departments/transport', createKnowledgeRouter(db, { requirePermission, currentAdministrator }, publication));
   router.get('/session', wrap((request, response) => { response.json(sessionResponse(sessionFor(request))); }));
   router.post('/logout', wrap((request, response) => {
     const session = sessionFor(request);

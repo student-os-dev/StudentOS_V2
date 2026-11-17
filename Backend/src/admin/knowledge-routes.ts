@@ -4,11 +4,14 @@ import type { Permission } from './provision.ts';
 import { createKnowledgeService } from './knowledge-service.ts';
 import { KnowledgeError, textInput, reviewInput, emptyInput, resourceId, pagination, expectedTag } from './knowledge-validation.ts';
 
+import { OllamaError } from '../ollama.ts';
+import type { PublicationService } from '../publishing/service.ts';
+
 export interface KnowledgeSecurity {
   requirePermission: (permission: Permission | readonly Permission[], department: (request: Request) => string | null) => RequestHandler;
   currentAdministrator: (request: Request) => string;
 }
-export function createKnowledgeRouter(db: DatabaseSync, security: KnowledgeSecurity) {
+export function createKnowledgeRouter(db: DatabaseSync, security: KnowledgeSecurity, publication?: PublicationService) {
   const router = express.Router();
   const service = createKnowledgeService(db);
   const read = security.requirePermission(['edit', 'publish'], () => 'transport');
@@ -19,8 +22,8 @@ export function createKnowledgeRouter(db: DatabaseSync, security: KnowledgeSecur
   const tag = (request: Request) => expectedTag(request.get('If-Match'));
   const send = (response: Response, result: { document: { etag: string } }, status = 200) =>
     response.status(status).set('ETag', result.document.etag).json(result);
-  const run = (handler: (request: Request, response: Response) => unknown): RequestHandler =>
-    (request, response, next) => { try { handler(request, response); } catch (error) { next(error); } };
+  const run = (handler: (request: Request, response: Response) => unknown | Promise<unknown>): RequestHandler =>
+    (request, response, next) => { Promise.resolve().then(() => handler(request, response)).catch(next); };
   // Authentication and CSRF already ran on the parent router. Only this subtree accepts larger text bodies.
   router.use((request, _response, next) => {
     if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method) &&
@@ -63,8 +66,21 @@ export function createKnowledgeRouter(db: DatabaseSync, security: KnowledgeSecur
     emptyInput(request.body);
     send(response, service.archive(actor(request), docId(request), tag(request)));
   }));
+  router.post('/documents/:documentId/versions/:versionId/index', publish, run(async (request, response) => {
+    emptyInput(request.body);
+    if (!publication) throw new KnowledgeError(503, 'INDEXING_UNAVAILABLE', 'Indexing is unavailable.');
+    send(response, await publication.index(actor(request), docId(request), resourceId(request.params.versionId), tag(request)));
+  }));
+  router.post('/documents/:documentId/versions/:versionId/publish', publish, run((request, response) => {
+    if (!publication) throw new KnowledgeError(503, 'INDEXING_UNAVAILABLE', 'Publication is unavailable.');
+    const body: unknown = request.body;
+    if (typeof body !== 'object' || body === null || Array.isArray(body) || Object.keys(body).length !== 1 || !('indexId' in body)) throw new KnowledgeError(400, 'INVALID_REQUEST', 'Supply an indexId.');
+    send(response, publication.publish(actor(request), docId(request), resourceId(request.params.versionId), tag(request), resourceId(body.indexId)));
+  }));
   const errors: ErrorRequestHandler = (error: unknown, _request, response, next) => {
-    if (error instanceof KnowledgeError) {
+    if (error instanceof OllamaError && error.code === 'BUSY') {
+      response.set('Retry-After','2').status(503).json({error:{code:'BUSY',message:'Another inference operation is running. Try again shortly.'}});
+    } else if (error instanceof KnowledgeError) {
       response.status(error.status).json({ error: { code: error.code, message: error.message } });
     } else if (typeof error === 'object' && error !== null && 'type' in error &&
         ['entity.parse.failed', 'entity.too.large', 'encoding.unsupported', 'charset.unsupported'].includes(String(error.type))) {

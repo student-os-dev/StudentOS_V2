@@ -65,3 +65,53 @@ Temporary browser profiles and screenshots are in ignored .tmp/. Generated build
 ## Limits
 
 History is local to this browser with no account or cloud synchronization. Multiple tabs do not synchronize in-memory changes; each tab can make one request, while the backend may return BUSY. Refresh may terminate receipt of an answer even if the backend continues processing it. Retry is explicit. Each question is independent. Transport answers use fictional prototype information and are not verified college policy. My AI is only a preview. No production deployment was performed.
+
+## Transport Department Admin
+
+Open http://127.0.0.1:5173/admin while the backend runs on port 3000.
+Use an explicitly provisioned administrator. This interface never creates accounts.
+
+Before starting the backend, set ADMIN_ORIGINS to include the exact frontend
+origin. For example, in the backend PowerShell terminal:
+
+~~~powershell
+Set-Location 'D:\StudentOS_V2\Backend'
+$env:ADMIN_ORIGINS = 'http://127.0.0.1:3000,http://localhost:3000,http://127.0.0.1:5173,http://localhost:5173'
+npm.cmd start
+~~~
+
+Restart an already running backend after changing this setting. Do not rewrite
+Origin in the proxy. For production, serve the frontend and API on the same HTTPS
+origin and configure the backend's existing Secure-cookie policy. Vite preview
+does not provide the development API proxy.
+
+Run the frontend in a second terminal:
+
+~~~powershell
+Set-Location 'D:\StudentOS_V2\Frontend'
+npm.cmd run dev
+~~~
+
+The admin page restores the current session, uses HttpOnly cookies, and keeps the
+CSRF token only in React memory. It provides paginated document listing and version
+history, exact-text creation/revision, submission, approval/rejection, explicit
+indexing and publication, and confirmed archival. Edit and publish grants are
+handled independently. Imported baseline documents remain read-only. A published
+earlier version is distinguished from a current draft.
+
+Every mutation of an existing document sends its exact ETag. A 412 never retries
+automatically: reload the document, review the changed state, then retry deliberately.
+Unsaved revision text remains while reloading. After uncertain network/indexing
+failures, reload before retrying; indexing can continue server-side if a page closes.
+Indexing may take several minutes. Only explicit publication makes a ready index
+available to students. Archival withdraws the document.
+
+Checks:
+
+~~~powershell
+node --test tests/admin-api.test.mjs
+npm.cmd run build
+~~~
+
+The API-client tests mock HTTP responses. A real browser login requires an
+approved account and running backend. No account is provisioned by the tests.

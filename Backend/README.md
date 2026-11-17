@@ -2,7 +2,7 @@
 
 A minimal Node.js, TypeScript, and Express backend for a Department Knowledge Assistant. All ten passages describe the **entirely fictional Cedarbridge Institute Transport Department**. They do not represent a real institution, transport service, price, schedule, or policy.
 
-The student endpoint is **POST /api/ask**; Step 11 also provides administrator login, session and logout under **/api/admin**. The active persistent embedding index is a local JSON file. Step 10 added SQLite storage, now used by administrator authentication; the chat endpoint still uses the original JSON index. This backend contains no frontend, additional department dataset, external database server, container, or hosted service.
+The student endpoint is **POST /api/ask**. Administrator authentication, Transport knowledge management, indexing and explicit publication are under **/api/admin**. Normal server answers use only approved, indexed and published SQLite knowledge with immutable JSON artifacts. The original ten-passage JSON corpus remains a legacy fixture, not a live fallback. See the Transport knowledge management and live publication section below for the current workflow. This backend contains no frontend, additional department dataset, external database server, container, or hosted service.
 
 ## Model compatibility on this laptop
 
@@ -17,7 +17,7 @@ References: [Ollama generation API](https://docs.ollama.com/api/generate), [thin
 ## Files
 
 ~~~text
-D:\StudentOS_V2\
+D:\StudentOS_V2\Backend\
 ├── package.json
 ├── package-lock.json
 ├── tsconfig.json
@@ -41,7 +41,7 @@ D:\StudentOS_V2\
     └── api.test.ts
 ~~~
 
-Generated working folders are node_modules, dist, .npm-cache, and .tmp. The live test transcript is .tmp/live-tests.txt. All project files, build output, dependency files, npm cache, and test artifacts are kept inside D:\StudentOS_V2. The existing Ollama process manages its own normal runtime state.
+Generated working folders are node_modules, dist, .npm-cache, and .tmp. The live test transcript is .tmp/live-tests.txt. All project files, build output, dependency files, npm cache, and test artifacts are kept inside D:\StudentOS_V2\Backend. The existing Ollama process manages its own normal runtime state.
 
 The sole direct runtime dependency is **express 5.3.0**. Development dependencies are **typescript 5.9.3**, **@types/node 24.19.2**, and **@types/express 5.0.6**. Their transitive dependencies are recorded in package-lock.json. Node 24 provides fetch, environment-file loading, TypeScript stripping for development, and the test runner; no Ollama SDK, dotenv, tsx, or additional testing package is needed.
 
@@ -50,7 +50,7 @@ The sole direct runtime dependency is **express 5.3.0**. Development dependencie
 Use the existing Node.js 24+ and Ollama installation. Both qwen3:4b and nomic-embed-text must already appear in ollama list. These commands do not install or download models.
 
 ~~~powershell
-Set-Location 'D:\StudentOS_V2'
+Set-Location 'D:\StudentOS_V2\Backend'
 node --version
 ollama list
 Invoke-RestMethod 'http://localhost:11434/api/version'
@@ -74,11 +74,11 @@ If an .env already exists, edit it instead of overwriting it. The implementation
 
 For development, use npm.cmd run dev instead of npm.cmd start. Stop with Ctrl+C. The default listener is http://127.0.0.1:3000. No background server is installed.
 
-After editing transport.json or changing the embedding model, run npm.cmd run index and restart the backend. Indexing embeds four passages per batch, writes a temporary file, and renames it to data/embeddings.json after validation. Startup checks the dataset fingerprint, exact stored passages, embedding model name and digest, prefix scheme, and vector dimensions. A missing or stale index produces an actionable startup error rather than silently re-embedding.
+For the legacy JSON prototype/test fixture only: after editing transport.json or changing the embedding model, run npm.cmd run index and restart the backend. Indexing embeds four passages per batch, writes a temporary file, and renames it to data/embeddings.json after validation. Startup checks the dataset fingerprint, exact stored passages, embedding model name and digest, prefix scheme, and vector dimensions. A missing or stale index produces an actionable startup error rather than silently re-embedding.
 
-## Example API tests
+## Historical prototype API examples
 
-Run these in a second PowerShell window while the backend is running.
+These examples describe the original fixture. The current server requires corresponding content to be explicitly approved, indexed and published first; importing the JSON baseline alone does not make it live.
 
 ~~~powershell
 $uri = 'http://127.0.0.1:3000/api/ask'
@@ -204,7 +204,7 @@ For the first request, Ollama reported 9,330.788 ms of answer-model loading, 1,7
 Run deterministic checks:
 
 ~~~powershell
-Set-Location 'D:\StudentOS_V2'
+Set-Location 'D:\StudentOS_V2\Backend'
 $env:npm_config_cache = Join-Path (Get-Location) '.npm-cache'
 npm.cmd run build
 npm.cmd test
@@ -237,7 +237,7 @@ The live suite prints one LIVE_MEASUREMENT JSON record per case. It verifies act
 ## Step 10: local SQLite database foundation
 
 This database is a separate foundation for future department administration.
-The running POST /api/ask endpoint still uses transport.json and embeddings.json.
+At Step 10, the running endpoint used transport.json and embeddings.json. The current server uses the publication workflow documented below.
 Initializing/importing this database does not publish knowledge, call Ollama,
 rebuild embeddings, or alter chat behavior.
 
@@ -249,7 +249,7 @@ upgrade. See the [Node SQLite documentation](https://nodejs.org/api/sqlite.html)
 ### Initialize, import, and inspect (PowerShell)
 
 ~~~powershell
-Set-Location 'D:\StudentOS_V2'
+Set-Location 'D:\StudentOS_V2\Backend'
 $env:npm_config_cache = Join-Path (Get-Location) '.npm-cache'
 
 # Creates data/student-os.sqlite and applies pending numbered migrations.
@@ -274,7 +274,7 @@ npm.cmd run build
 node dist/scripts/inspect-database.js
 ~~~
 
-The fixed database location is D:\StudentOS_V2\data\student-os.sqlite, independent
+The fixed database location is D:\StudentOS_V2\Backend\data\student-os.sqlite, independent
 of the shell's working directory. The connection helper explicitly enables
 foreign keys and recursive triggers, with a five-second busy timeout. It uses
 SQLite's ordinary rollback journal; no server, WAL service, ORM or vector
@@ -391,7 +391,7 @@ New source files:
 
 ## Step 11: administrator authentication and authorization
 
-Authentication is now available; document management and admin UI are not.
+Authentication is available. Transport backend document management and publication are now implemented below; admin UI is not.
 The frontend and existing /api/ask, RAG, Ollama settings and knowledge files are
 unchanged. No real administrator was provisioned during implementation.
 
@@ -404,7 +404,7 @@ unchanged. No real administrator was provisioned during implementation.
 ### Upgrade and provision locally
 
 ~~~powershell
-Set-Location 'D:\StudentOS_V2'
+Set-Location 'D:\StudentOS_V2\Backend'
 $env:npm_config_cache = Join-Path (Get-Location) '.npm-cache'
 npm.cmd run db:migrate
 npm.cmd run db:inspect
@@ -414,7 +414,7 @@ npm.cmd start
 
 Migration 2 adds administrator_sessions and login_rate_limits and permits
 department-neutral authentication events in audit_events. It preserves existing
-audit rows and append-only triggers. Startup requires migration 2; it does not
+audit rows and append-only triggers. Startup requires the latest registered migration; it does not
 silently migrate or repair the database. Restart existing processes to load the
 new code.
 
@@ -535,8 +535,7 @@ resolver. Resolve existing resources from their stored document department.
 A route department ID is only a selector; a matching current DB membership and
 explicit grant are always required. Never use a browser-supplied permission as
 the required permission. New mutation routes must use authentication, CSRF and
-the department-permission guard together. There are no production document
-routes yet; tests exercise the guard through test-only routes.
+the department-permission guard together. Transport production routes now use these guards; test-only probes also verify the guards in isolation.
 
 Login limits: 5 attempts per normalized email and 30 per socket IP per 15-minute
 fixed window, including successful attempts and unknown accounts. Counters
@@ -579,3 +578,216 @@ hashing/salts, provisioning, login/logout, cookies, rotation, expiry, CSRF, rate
 limits, disabled accounts, forged headers/tokens, edit/publish separation,
 cross-department resource checks, fail-closed audit/storage errors, HTTPS policy
 and anonymous chat compatibility.
+
+
+## Transport knowledge management and live publication
+
+The normal server now uses **published SQLite knowledge only** for POST /api/ask.
+The original transport.json and embeddings.json remain intact as legacy fixtures;
+they are not a runtime fallback. Imported baseline documents remain read-only
+drafts and are not automatically approved or published. With no publications,
+Department AI correctly returns unavailable. No administrator is automatically
+created by migration or startup.
+
+The current repository has Backend/ and Frontend/ beneath D:\StudentOS_V2.
+Run backend commands inside D:\StudentOS_V2\Backend. The frontend is unchanged.
+
+### Initialize or upgrade
+
+~~~powershell
+Set-Location 'D:\StudentOS_V2\Backend'
+$env:npm_config_cache = Join-Path (Get-Location) '.npm-cache'
+npm.cmd run db:migrate
+npm.cmd run db:inspect
+npm.cmd test
+node node_modules/typescript/bin/tsc --noEmit
+npm.cmd run build
+npm.cmd start
+~~~
+
+Migration 3 was already present in the interrupted implementation. It adds the
+document concurrency counter and eligible_document_versions view, and restricts
+index metadata to eligible approved versions. No applied migration was rewritten.
+Run migrations before starting the server. The existing Node/Ollama models and
+configuration are reused; no models or dependencies are downloaded.
+
+### Routes and permissions
+
+All paths below start with /api/admin/departments/transport.
+All mutations require an authenticated session, allowed Origin, CSRF header and
+application/json. Indexing and publication also require publish permission.
+
+| Method | Path | Permission |
+|---|---|---|
+| GET | /documents | edit or publish |
+| GET | /documents/:documentId | edit or publish |
+| GET | /documents/:documentId/versions | edit or publish |
+| GET | /documents/:documentId/versions/:versionId | edit or publish |
+| POST | /documents | edit |
+| POST | /documents/:documentId/revisions | edit |
+| POST | /documents/:documentId/versions/:versionId/submit | edit |
+| POST | /documents/:documentId/versions/:versionId/approve | publish |
+| POST | /documents/:documentId/versions/:versionId/reject | publish |
+| POST | /documents/:documentId/versions/:versionId/index | publish |
+| POST | /documents/:documentId/versions/:versionId/publish | publish |
+| POST | /documents/:documentId/archive | publish |
+
+List routes accept limit (1?100, default 25) and offset (0?1,000,000).
+Document responses return an ETag header and document.etag. Every mutation of an
+existing document requires that exact quoted value in If-Match. Missing
+preconditions return 428, stale ETags 412, and invalid transitions 409.
+Foreign or guessed document/version IDs return 404 after department authorization;
+missing grants return 403. Browser-supplied department, status and permission
+fields cannot grant authority.
+
+Create accepts {title,text,fictional?}; revisions accept {title,text}. The server
+assigns IDs, source metadata, department, authors and timestamps. Source content
+is immutable, including draft versions: corrections create new numbered versions.
+The original baseline documents cannot be revised, reviewed or archived through
+these routes.
+
+Titles: 1?160 UTF-16 code units. Text: 1?20,000 code units and at most 64 KiB UTF-8.
+Requests: at most 96 KiB JSON. Whitespace-only values, malformed Unicode, binary
+control characters, extra fields, non-JSON media and compressed uploads are
+rejected. Text is stored exactly as accepted; it is never executed or rendered
+as HTML. Review notes are limited to 1,000 code units. Reject requires a note;
+approve accepts an optional note. Submit, index and archive take {}. Publish
+takes {indexId}.
+
+The workflow is draft -> in_review -> approved or rejected. Only the latest
+version can be submitted/reviewed. Rejected content needs a new revision before
+resubmission. Revisions are blocked while the latest version is in review.
+Approval and rejection require independent publish permission; a person explicitly
+granted both edit and publish can perform both roles. A two-person rule is not
+implicitly imposed.
+
+### Example using an explicitly authorized administrator
+
+First use the Step 11 login example to establish $browserSession and $current.
+The following example requires edit and publish grants, or a deliberate account
+switch before the review step. It does not provision an account.
+
+~~~powershell
+$base = 'http://127.0.0.1:3000'
+$documents = '/api/admin/departments/transport/documents'
+function Send-Knowledge($path, $body, $etag) {
+    $headers = @{ Origin = $base; 'X-CSRF-Token' = $current.csrfToken }
+    if ($etag) { $headers['If-Match'] = $etag }
+    $request = @{
+        Uri = "$base$path"
+        Method = 'Post'
+        ContentType = 'application/json'
+        Headers = $headers
+        WebSession = $browserSession
+        Body = ($body | ConvertTo-Json -Compress)
+    }
+    Invoke-RestMethod @request
+}
+
+$created = Send-Knowledge $documents @{
+    title = 'Fictional shuttle timetable'
+    text = 'The fictional campus shuttle leaves at 09:00.'
+    fictional = $true
+} $null
+$doc = $created.document
+$versionPath = "$documents/$($doc.id)/versions/$($doc.latestVersion.id)"
+
+$submitted = Send-Knowledge "$versionPath/submit" @{} $doc.etag
+$approved = Send-Knowledge "$versionPath/approve" @{} $submitted.document.etag
+
+# Approval alone is not visible to students.
+$indexed = Send-Knowledge "$versionPath/index" @{} $approved.document.etag
+
+# A ready index alone is also not visible.
+$published = Send-Knowledge "$versionPath/publish" @{
+    indexId = $indexed.index.id
+} $indexed.document.etag
+
+# Archive withdraws this document immediately, preserving its immutable history.
+# Send-Knowledge "$documents/$($doc.id)/archive" @{} $published.document.etag
+~~~
+
+After an indexing failure or stale ETag, GET the document again before retrying.
+Its latestVersion.indexes contains the latest ten build IDs and states. Its
+publication field identifies the current publication independently of the latest
+draft. An index request holds a new document revision while it runs; ready/failed
+completion advances the ETag again.
+
+### Indexing and publication guarantees
+
+Indexing is explicit and runs within the HTTP request; there is no new queue,
+service or background worker. It segments complete sentences into passages of at
+most 500 characters and embeds small sequential batches of four. A single sentence
+over 500 characters is rejected with 422 rather than split and stripped of
+qualifications. Source locations retain exact character offsets in the immutable
+version. Embeddings use the existing Nomic prefixes and model.
+
+Chunks are inserted only after successful embedding. Index metadata stores the
+model name/digest, dimensions, chunker version, prefixes, artifact hash, status and
+timestamps. The immutable JSON artifact is written via a temporary file and rename
+under Backend/data/indexes/<indexId>.json. It is not the prototype embeddings.json.
+Generated indexes are ignored by Git and never served as public static files.
+
+Finalization rechecks session, permissions, ETag, approval and archival state in a
+transaction. Stale changes or failures leave no partially ready index/publication.
+Retries create a new build ID and reuse matching immutable version chunks.
+An audit failure rolls back the corresponding state transition.
+
+Publication validates the complete artifact, checksum, source chunks and model
+identity, then atomically switches the document's publication pointer. Publication
+and its audit event commit together. A newer draft/rejection/approval or a failed
+replacement never silently replaces the previous approved publication. A new
+approval must be explicitly indexed and published.
+
+Retrieval reads only publication pointers joined to approved versions, ready
+indexes and unarchived documents. It validates artifact contents against SQLite
+and rechecks publication status before generation and before returning an answer.
+Archival removes publication pointers transactionally. An in-flight answer that
+references withdrawn/replaced content is suppressed rather than returned.
+Missing/corrupt/incompatible artifacts fail closed with 503; there is no fallback
+to private versions or the old JSON baseline.
+
+The existing concise, sentence-verified answers, department filter, cosine
+threshold, context limits and timing fields remain. Sources keep id/title/passage
+and add documentId, versionId and character location for historical provenance.
+No frontend change is required to tolerate these additive fields.
+
+### Operations and limitations
+
+- Run one backend process for this prototype. Chat and indexing share one inference
+  gate; concurrent inference receives 503 BUSY with Retry-After.
+- Startup marks interrupted pending indexes failed and records system audit events.
+  Retry explicitly after reloading the document. Startup does not publish anything.
+- A crash between file rename and database commit can leave an unreferenced artifact.
+  It is never retrieved. Automatic artifact/history garbage collection is deferred.
+- Back up the SQLite database and referenced index artifacts together. Keep the
+  original JSON fixtures separately. Filesystem access remains a trusted-operator
+  boundary.
+- Restart after changing embedding models. Existing artifacts with incompatible
+  digests/dimensions are refused; rebuild and republish affected approved versions.
+- The whole small published corpus is validated/read for an ask. This favors
+  correctness on a single-machine prototype; large-corpus caching/search is deferred.
+- No uploads, PDF/DOCX/OCR, additional departments, frontend administration, MFA or
+  external deployment infrastructure were added.
+- Automated workflow/publication tests use fake model responses and isolated
+  synthetic administrators. They prove isolation and pipeline behavior, not live
+  Ollama latency or semantic relevance. The older LIVE_OLLAMA suite remains opt-in
+  and exercises the legacy fixture. Node 24's experimental SQLite warning remains.
+
+### Complete numbered procedures
+
+Ordinary questions retain the two-passage, 1,200-character model context and exact
+sentence verification. For procedure questions, a verified relevant model quote
+anchors a single published document version. The server expands that version in
+source order (maximum 12 chunks / 6,000 serialized evidence characters), checks
+contiguous step numbers and any requested step count, and returns its exact text
+with complete step bodies, preconditions and final notes. This avoids regenerating
+long procedures within the 160-token model limit. All expanded sources undergo the
+final publication check. Missing steps, mixed versions, oversized documents and
+invalid or truncated model output fail closed. No stored text or indexes change.
+
+This bounded extractive path supports explicitly numbered procedures in a single
+document; it does not synthesize unnumbered or multi-document procedures. Sources
+include a verified excerpt alongside the unchanged full passage and version IDs.
+Run `node --test tests/procedures.test.ts tests/rag.test.ts tests/publication.test.ts`
+for focused regression coverage.

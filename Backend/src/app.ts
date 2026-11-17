@@ -5,7 +5,10 @@ import { isObject, type KnowledgeIndex } from './knowledge.ts';
 import { OllamaError, milliseconds, type ModelClient } from './ollama.ts';
 import { askQuestion } from './rag.ts';
 
-export function createApp(config: Config, index: KnowledgeIndex, client: ModelClient) {
+import type { PublishedKnowledge } from './publishing/published-knowledge.ts';
+import type { InferenceGate } from './inference-gate.ts';
+
+export function createApp(config: Config, index: KnowledgeIndex | PublishedKnowledge, client: ModelClient, gate?: InferenceGate) {
   const app = express();
   let busy = false;
   app.disable('x-powered-by');
@@ -39,8 +42,14 @@ export function createApp(config: Config, index: KnowledgeIndex, client: ModelCl
     }
     busy = true;
     try {
-      response.json(await askQuestion(body.departmentId, body.question.trim(), index, config, client,
-        Number(response.locals.startedAt)));
+      const departmentId = body.departmentId, question = body.question.trim();
+      const run = async () => {
+        const published = 'getIndex' in index ? index : null;
+        const snapshot = published ? published.getIndex(departmentId) : index as KnowledgeIndex;
+        return askQuestion(departmentId, question, snapshot, config, client,
+          Number(response.locals.startedAt), published ? passages => published.isCurrent(passages) : undefined);
+      };
+      response.json(gate ? await gate.run(run) : await run());
     } catch (error) { next(error); }
     finally { busy = false; }
   });
@@ -50,6 +59,7 @@ export function createApp(config: Config, index: KnowledgeIndex, client: ModelCl
   const handleError: ErrorRequestHandler = (error: unknown, _request, response, _next) => {
     const totalMs = milliseconds(performance.now() - Number(response.locals.startedAt));
     if (error instanceof OllamaError) {
+      if (error.code === 'BUSY') response.setHeader('Retry-After', '2');
       response.status(error.status).json({ error: { code: error.code, message: error.message }, timings: { totalMs } });
     } else if (isObject(error) && ['entity.parse.failed', 'entity.too.large'].includes(String(error.type))) {
       const tooLarge = error.type === 'entity.too.large';

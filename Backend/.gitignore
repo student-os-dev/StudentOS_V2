@@ -14,3 +14,6 @@ data/embeddings.json.tmp
 *.sqlite3-*
 *.db
 *.db-*
+
+# Immutable generated publication artifacts
+/data/indexes/
