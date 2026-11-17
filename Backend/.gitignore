@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.env
+.npm-cache/
+.tmp/
+data/embeddings.json
+data/embeddings.json.tmp
+
+
+# Local SQLite data and sidecars
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*

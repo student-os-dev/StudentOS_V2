@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Build files
+dist/
+build/
+coverage/
+
+# Local databases
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+
+# Editor and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,66 @@
+{
+  "fictional": true,
+  "description": "Entirely fictional demonstration data for Cedarbridge Institute's Transport Department. No real institution, service, route, fee, schedule, or policy is represented.",
+  "passages": [
+    {
+      "id": "TRN-001",
+      "departmentId": "transport",
+      "title": "Transport office hours and location (fictional)",
+      "text": "The fictional Cedarbridge Institute Transport Office is in Room T-12 and is open Monday to Friday from 09:00 to 16:00."
+    },
+    {
+      "id": "TRN-002",
+      "departmentId": "transport",
+      "title": "Route A morning timetable (fictional)",
+      "text": "In this fictional dataset, Route A leaves Maple Gate at 07:40, stops at Clock Square at 07:55, and arrives at Cedarbridge Institute at 08:15."
+    },
+    {
+      "id": "TRN-003",
+      "departmentId": "transport",
+      "title": "Route B morning timetable (fictional)",
+      "text": "In this fictional dataset, Route B leaves Lake Arcade at 07:30, stops at Birch Circle at 07:50, and arrives at Cedarbridge Institute at 08:10."
+    },
+    {
+      "id": "TRN-004",
+      "departmentId": "transport",
+      "title": "Evening return buses (fictional)",
+      "text": "In this fictional dataset, Route A and Route B return buses leave Cedarbridge Institute from Bay 2 at 17:10 on teaching weekdays."
+    },
+    {
+      "id": "TRN-005",
+      "departmentId": "transport",
+      "title": "Bus pass application documents (fictional)",
+      "text": "For a bus pass at fictional Cedarbridge Institute, submit Form T-01, a student ID copy, and one photograph at the Transport Office."
+    },
+    {
+      "id": "TRN-006",
+      "departmentId": "transport",
+      "title": "Semester bus pass fee and validity (fictional)",
+      "text": "The fictional Cedarbridge Institute semester bus pass costs INR 1,800 and is valid for one teaching semester."
+    },
+    {
+      "id": "TRN-007",
+      "departmentId": "transport",
+      "title": "Lost bus pass replacement (fictional)",
+      "text": "To replace a lost bus pass at fictional Cedarbridge Institute, report the loss at the Transport Office, submit Form T-02, and pay INR 100."
+    },
+    {
+      "id": "TRN-008",
+      "departmentId": "transport",
+      "title": "Route change requests (fictional)",
+      "text": "At fictional Cedarbridge Institute, submit Form T-03 at the Transport Office at least two working days before a requested route change; changes require an available seat."
+    },
+    {
+      "id": "TRN-009",
+      "departmentId": "transport",
+      "title": "Planned cancellation notices (fictional)",
+      "text": "At fictional Cedarbridge Institute, planned bus cancellations are posted on the noticeboard outside Room T-12 by 18:00 on the previous working day."
+    },
+    {
+      "id": "TRN-010",
+      "departmentId": "transport",
+      "title": "Lost property reporting (fictional)",
+      "text": "At fictional Cedarbridge Institute, report an item left on a bus to the Transport Office with the route, travel date, and item description."
+    }
+  ]
+}
